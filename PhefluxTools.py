@@ -5,7 +5,7 @@ import tempfile
 from pprint import pprint
 from pathlib import Path
 
-import cobra
+import cobra.io
 import libsbml
 import numpy as np
 import pandas as pd
@@ -49,9 +49,9 @@ setup(
     install_requires=INSTALL_REQUIRES,
     license=LICENSE,
     packages=find_packages(),
-    include_package_data=True
-    py_modules=['PhefluxTools']
-)
+    include_package_data=True,
+    py_modules=['PhefluxTools'] )
+
 
 
 
@@ -267,11 +267,12 @@ def normalization_fluxes(fluxes):
     return fluxes
 
 
-def analyze_ex_fluxes_with_colors(folder1, folder2, root1, root2, tail1, tail2, conditions):
+def analyze_ex_fluxes_with_colors(model_ex_fluxes, folder1, folder2, root1, root2, tail1, tail2, conditions):
     """
     Analyze fluxes data and plot scatter plots with assigned colors for each condition.
 
     Args:
+        model_ex_fluxes (str): Path to the model fluxes file.
         folder1 (str): Path to the first result folder.
         folder2 (str): Path to the second result folder.
         root1 (str): Root name of the first result file.
@@ -284,35 +285,35 @@ def analyze_ex_fluxes_with_colors(folder1, folder2, root1, root2, tail1, tail2, 
         Tuple: Correlation and p-value.
     """
     # Assign colors to the conditions
-    colors = assign_colors(len(conditions))
-
+    colors  = assign_colors(len(conditions))
+    results = remove_prefixes_ex_fluxes(model_ex_fluxes)
     # Iterate over the conditions
     for condition, color in zip(conditions, colors):
         # Read the pheflux data from the corresponding file
-        pheflux = pd.read_csv(
+        model1 = pd.read_csv(
             folder1 + root1 + condition + tail1 + ".csv",
             sep="\t", lineterminator="\n", names=['Reaction_ID', "Flux"]).set_index("Reaction_ID")
         # Read the phefluxFleming data from the corresponding file
-        phefluxFleming = pd.read_csv(
+        model2 = pd.read_csv(
             folder2 + root2 + condition + tail2 + ".csv",
             sep="\t", lineterminator="\n", names=['Reaction_ID', "Flux"]).set_index("Reaction_ID")
 
-        pheflux, phefluxFleming = normalization(pheflux), normalization(phefluxFleming)
+        model1, model2 = normalization_fluxes(model1), normalization_fluxes(model2)
 
         # Create a DataFrame to store the fluxes results
         fluxes = pd.DataFrame(columns=["Reaction_ID", "modelo_1", "modelo_2"])
 
         # Iterate over the reactions in pheflux
-        for reaction in pheflux.index:
-            if reaction in phefluxFleming.index:
+        for reaction in model1.index:
+            if reaction in model2.index:
                 # Add the flux data to the fluxes table
-                fluxes.loc[reaction] = [reaction, pheflux.loc[reaction].Flux, phefluxFleming.loc[reaction].Flux]
+                fluxes.loc[reaction] = [reaction, model1.loc[reaction].Flux, model2.loc[reaction].Flux]
 
         # Set the index of df1 as "Reaction_ID"
         df1 = fluxes.set_index("Reaction_ID")
 
         # Create a DataFrame from the results with the "Reaction_ID" column as index
-        df2 = pd.DataFrame(resultado, columns=["Reaction_ID"])
+        df2 = pd.DataFrame(results, columns=["Reaction_ID"])
         df2 = df2.set_index("Reaction_ID")
 
         # Filter the rows of df1 that have the keys from df2
