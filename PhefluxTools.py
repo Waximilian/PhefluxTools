@@ -20,7 +20,7 @@ import pathlib
 
 HERE = pathlib.Path(__file__).parent
 
-VERSION = '0.0.1' 
+VERSION = '0.0.2' 
 PACKAGE_NAME = 'PhefluxTools' 
 AUTHOR = 'Maximiliano Andres Farias Miño'
 AUTHOR_EMAIL = 'maxi5040@gmail.com' 
